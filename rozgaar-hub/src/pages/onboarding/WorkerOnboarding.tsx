@@ -1,0 +1,166 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { X } from "lucide-react";
+
+const commonSkills = [
+  "Construction",
+  "Plumbing",
+  "Electrical",
+  "Painting",
+  "Carpentry",
+  "Cleaning",
+  "Delivery",
+  "Cooking",
+  "Housekeeping",
+  "Driving",
+];
+
+export default function WorkerOnboarding() {
+  const navigate = useNavigate();
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [customSkill, setCustomSkill] = useState("");
+  const [formData, setFormData] = useState({
+    location: "",
+    hourlyRate: "",
+    dailyRate: "",
+    bio: "",
+  });
+
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+    );
+  };
+
+  const addCustomSkill = () => {
+    if (customSkill && !selectedSkills.includes(customSkill)) {
+      setSelectedSkills([...selectedSkills, customSkill]);
+      setCustomSkill("");
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.success("Profile completed! Welcome to RozgaarHub!");
+    navigate("/worker/dashboard");
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <Card className="w-full max-w-2xl shadow-elevated">
+        <CardHeader>
+          <CardTitle className="text-2xl">Complete Your Worker Profile</CardTitle>
+          <p className="text-muted-foreground">
+            Help employers find you by completing your profile
+          </p>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Skills Selection */}
+            <div className="space-y-3">
+              <Label>Your Skills</Label>
+              <div className="flex flex-wrap gap-2">
+                {commonSkills.map((skill) => (
+                  <Badge
+                    key={skill}
+                    variant={selectedSkills.includes(skill) ? "default" : "outline"}
+                    className="cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => toggleSkill(skill)}
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+              
+              {/* Selected Skills */}
+              {selectedSkills.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
+                  {selectedSkills.map((skill) => (
+                    <Badge key={skill} className="gradient-saffron text-white">
+                      {skill}
+                      <X
+                        className="ml-1 h-3 w-3 cursor-pointer"
+                        onClick={() => toggleSkill(skill)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              {/* Custom Skill Input */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add custom skill..."
+                  value={customSkill}
+                  onChange={(e) => setCustomSkill(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSkill())}
+                />
+                <Button type="button" onClick={addCustomSkill} variant="outline">
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Your Location</Label>
+              <Input
+                id="location"
+                placeholder="City, State"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="hourlyRate">Hourly Rate (₹)</Label>
+                <Input
+                  id="hourlyRate"
+                  type="number"
+                  placeholder="50"
+                  value={formData.hourlyRate}
+                  onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dailyRate">Daily Rate (₹)</Label>
+                <Input
+                  id="dailyRate"
+                  type="number"
+                  placeholder="400"
+                  value={formData.dailyRate}
+                  onChange={(e) => setFormData({ ...formData, dailyRate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">About You</Label>
+              <Textarea
+                id="bio"
+                placeholder="Tell employers about your experience..."
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                rows={4}
+              />
+            </div>
+
+            <Button type="submit" className="w-full gradient-saffron text-white" size="lg">
+              Complete Profile
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

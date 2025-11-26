@@ -1,0 +1,78 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import connectDB from './config/db.js';
+
+// Import routes
+import authRoutes from './routes/authRoutes.js';
+import workerRoutes from './routes/workerRoutes.js';
+import employerRoutes from './routes/employerRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+
+// Load environment variables
+dotenv.config();
+
+// Initialize Express app
+const app = express();
+
+// Connect to MongoDB
+connectDB();
+
+// Middleware
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+    credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'RozgaarHub API is running',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/worker', workerRoutes);
+app.use('/api/employer', employerRoutes);
+app.use('/api', userRoutes);
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found'
+    });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err.message);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal server error',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+});
+
+// Start server
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+    console.log(`\n🚀 RozgaarHub Backend Server`);
+    console.log(`📡 Running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 API URL: http://localhost:${PORT}/api`);
+    console.log(`💚 Health check: http://localhost:${PORT}/api/health\n`);
+});
+
+export default app;
