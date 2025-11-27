@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { WorkerSidebar } from "@/components/WorkerSidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useAuthStore } from "@/store/authStore";
@@ -19,14 +20,36 @@ import {
 } from "lucide-react";
 import { mockPayments, mockCalendarEvents } from "@/lib/mockData";
 import { useNavigate } from "react-router-dom";
+import { workerAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function WorkerDashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const workerProfile = user as WorkerProfile;
+  const [workerProfile, setWorkerProfile] = useState<WorkerProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await workerAPI.getProfile() as any;
+        if (response.success) {
+          setWorkerProfile(response.worker);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        toast.error("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   // Show loading state if user data is not yet loaded
-  if (!user || !workerProfile) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -36,6 +59,8 @@ export default function WorkerDashboard() {
       </div>
     );
   }
+
+  if (!workerProfile) return null;
 
   const pendingPayments = mockPayments.filter((p) => p.status === "pending");
   const totalPending = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -63,7 +88,7 @@ export default function WorkerDashboard() {
             />
             <StatCard
               title="Active Jobs"
-              value="3"
+              value="0" // TODO: Fetch active jobs count
               icon={Briefcase}
               gradient="gradient-saffron"
             />

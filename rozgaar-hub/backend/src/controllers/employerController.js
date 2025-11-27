@@ -2,6 +2,7 @@ import Job from '../models/Job.js';
 import Application from '../models/Application.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
+import CustomJobTitle from '../models/CustomJobTitle.js';
 
 // @desc    Get employer profile
 // @route   GET /api/employer/profile
@@ -59,9 +60,15 @@ export const createJob = async (req, res) => {
 // @access  Private (Employer)
 export const getMyJobs = async (req, res) => {
     try {
-        const { status } = req.query;
+        const { status, id } = req.query;
 
         let query = { employerId: req.user._id };
+
+        // If ID is provided, fetch specific job
+        if (id) {
+            query._id = id;
+        }
+
         if (status) {
             query.status = status;
         }
@@ -372,3 +379,71 @@ export const getAnalytics = async (req, res) => {
         });
     }
 };
+
+// @desc    Create custom job title
+// @route   POST /api/employer/job-titles
+// @access  Private (Employer)
+export const createCustomJobTitle = async (req, res) => {
+    try {
+        const { title } = req.body;
+
+        if (!title || title.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job title is required'
+            });
+        }
+
+        // Check if title already exists (case-insensitive)
+        const existingTitle = await CustomJobTitle.findOne({
+            title: { $regex: new RegExp(`^${title.trim()}$`, 'i') }
+        });
+
+        if (existingTitle) {
+            return res.status(400).json({
+                success: false,
+                message: 'This job title already exists'
+            });
+        }
+
+        const customJobTitle = await CustomJobTitle.create({
+            title: title.trim(),
+            createdBy: req.user._id
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Custom job title created successfully',
+            jobTitle: customJobTitle
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error creating custom job title',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Get all custom job titles
+// @route   GET /api/employer/job-titles
+// @access  Private (Employer)
+export const getCustomJobTitles = async (req, res) => {
+    try {
+        const customJobTitles = await CustomJobTitle.find()
+            .sort({ createdAt: -1 })
+            .select('title createdAt');
+
+        res.json({
+            success: true,
+            count: customJobTitles.length,
+            jobTitles: customJobTitles
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching custom job titles'
+        });
+    }
+};
+

@@ -1,12 +1,12 @@
 import { NavLink } from "@/components/NavLink";
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Briefcase, 
-  Users, 
-  MessageSquare, 
-  Wallet, 
-  User, 
+import {
+  LayoutDashboard,
+  Calendar,
+  Briefcase,
+  Users,
+  MessageSquare,
+  Wallet,
+  User,
   HelpCircle,
   Menu,
   X
@@ -19,6 +19,7 @@ const navigation = [
   { name: "Dashboard", href: "/worker/dashboard", icon: LayoutDashboard },
   { name: "Calendar", href: "/worker/calendar", icon: Calendar },
   { name: "Jobs", href: "/worker/jobs", icon: Briefcase },
+  { name: "My Applications", href: "/worker/applications", icon: Briefcase },
   { name: "Team", href: "/worker/team", icon: Users },
   { name: "Messages", href: "/worker/messages", icon: MessageSquare },
   { name: "Wallet", href: "/worker/wallet", icon: Wallet },

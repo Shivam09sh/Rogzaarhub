@@ -9,7 +9,9 @@ import {
     getJobApplications,
     updateApplicationStatus,
     createPayment,
-    getAnalytics
+    getAnalytics,
+    createCustomJobTitle,
+    getCustomJobTitles
 } from '../controllers/employerController.js';
 import { protect, requireEmployer } from '../middleware/auth.js';
 
@@ -29,5 +31,7 @@ router.get('/applications/:jobId', getJobApplications);
 router.put('/applications/:id', updateApplicationStatus);
 router.post('/payments', createPayment);
 router.get('/analytics', getAnalytics);
+router.post('/job-titles', createCustomJobTitle);
+router.get('/job-titles', getCustomJobTitles);
 
 export default router;

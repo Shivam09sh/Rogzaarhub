@@ -15,8 +15,12 @@ export const register = async (req, res) => {
     try {
         const { name, email, password, phone, role, language } = req.body;
 
+        // Log incoming request data
+        console.log('📝 Registration request:', { name, email, phone, role, language });
+
         // Validation
         if (!name || !email || !password || !phone || !role) {
+            console.log('❌ Missing required fields:', { name: !!name, email: !!email, password: !!password, phone: !!phone, role: !!role });
             return res.status(400).json({
                 success: false,
                 message: 'Please provide all required fields'
@@ -26,6 +30,7 @@ export const register = async (req, res) => {
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
+            console.log('❌ User already exists:', email);
             return res.status(400).json({
                 success: false,
                 message: 'User already exists with this email'
@@ -33,6 +38,7 @@ export const register = async (req, res) => {
         }
 
         // Create user
+        console.log('✅ Creating user with data:', { name, email, phone, role, language: language || 'en' });
         const user = await User.create({
             name,
             email,
@@ -45,6 +51,7 @@ export const register = async (req, res) => {
         // Generate token
         const token = generateToken(user._id);
 
+        console.log('✅ User created successfully:', user._id);
         res.status(201).json({
             success: true,
             message: 'User registered successfully',
@@ -52,11 +59,24 @@ export const register = async (req, res) => {
             user: user.getPublicProfile()
         });
     } catch (error) {
-        console.error('Register error:', error);
+        console.error('❌ Register error:', error);
+        console.error('❌ Error details:', error.errors);
+
+        // Extract validation error messages
+        let errorMessage = 'Error registering user';
+        if (error.name === 'ValidationError') {
+            const validationErrors = Object.values(error.errors).map(err => err.message);
+            errorMessage = validationErrors.join(', ');
+        } else if (error.code === 11000) {
+            // Duplicate key error (unique constraint)
+            errorMessage = 'User already exists with this email';
+        }
+
         res.status(500).json({
             success: false,
-            message: 'Error registering user',
-            error: error.message
+            message: errorMessage,
+            error: error.message,
+            details: error.errors
         });
     }
 };

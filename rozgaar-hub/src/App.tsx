@@ -13,6 +13,7 @@ import WorkerOnboarding from "./pages/onboarding/WorkerOnboarding";
 import EmployerOnboarding from "./pages/onboarding/EmployerOnboarding";
 import WorkerDashboard from "./pages/worker/Dashboard";
 import WorkerJobs from "./pages/worker/Jobs";
+import WorkerMyApplications from "./pages/worker/MyApplications";
 import WorkerCalendar from "./pages/worker/Calendar";
 import WorkerTeam from "./pages/worker/Team";
 import WorkerMessages from "./pages/worker/Messages";
@@ -22,6 +23,8 @@ import WorkerHelp from "./pages/worker/Help";
 import EmployerDashboard from "./pages/employer/Dashboard";
 import EmployerPostJob from "./pages/employer/PostJob";
 import EmployerProjects from "./pages/employer/Projects";
+import EmployerViewProject from "./pages/employer/ViewProject";
+import EmployerEditProject from "./pages/employer/EditProject";
 import EmployerWorkers from "./pages/employer/Workers";
 import EmployerPayments from "./pages/employer/Payments";
 import EmployerMessages from "./pages/employer/Messages";
@@ -64,6 +67,11 @@ const App = () => (
             <Route path="/worker/jobs" element={
               <ProtectedRoute requiredRole="worker">
                 <WorkerJobs />
+              </ProtectedRoute>
+            } />
+            <Route path="/worker/applications" element={
+              <ProtectedRoute requiredRole="worker">
+                <WorkerMyApplications />
               </ProtectedRoute>
             } />
             <Route path="/worker/calendar" element={
@@ -111,6 +119,16 @@ const App = () => (
             <Route path="/employer/projects" element={
               <ProtectedRoute requiredRole="employer">
                 <EmployerProjects />
+              </ProtectedRoute>
+            } />
+            <Route path="/employer/projects/:id" element={
+              <ProtectedRoute requiredRole="employer">
+                <EmployerViewProject />
+              </ProtectedRoute>
+            } />
+            <Route path="/employer/projects/:id/edit" element={
+              <ProtectedRoute requiredRole="employer">
+                <EmployerEditProject />
               </ProtectedRoute>
             } />
             <Route path="/employer/workers" element={

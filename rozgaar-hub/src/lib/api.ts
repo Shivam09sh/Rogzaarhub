@@ -71,7 +71,9 @@ export const employerAPI = {
     getApplications: (jobId) => api.get(`/employer/applications/${jobId}`),
     updateApplication: (id, data) => api.put(`/employer/applications/${id}`, data),
     createPayment: (data) => api.post('/employer/payments', data),
-    getAnalytics: () => api.get('/employer/analytics')
+    getAnalytics: () => api.get('/employer/analytics'),
+    createJobTitle: (title) => api.post('/employer/job-titles', { title }),
+    getJobTitles: () => api.get('/employer/job-titles')
 };
 
 // Common API

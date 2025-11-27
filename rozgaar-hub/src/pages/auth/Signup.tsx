@@ -110,8 +110,10 @@ export default function Signup() {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                minLength={6}
                 required
               />
+              <p className="text-xs text-muted-foreground">Password must be at least 6 characters</p>
             </div>
 
             <div className="space-y-2">

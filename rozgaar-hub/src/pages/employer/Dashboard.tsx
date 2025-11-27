@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { EmployerSidebar } from "@/components/EmployerSidebar";
 import { useAuthStore } from "@/store/authStore";
@@ -13,19 +14,53 @@ import {
   IndianRupee,
   TrendingUp,
 } from "lucide-react";
-import { mockJobs } from "@/lib/mockData";
+import { employerAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function EmployerDashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState({
+    totalJobs: 0,
+    activeJobs: 0,
+    completedJobs: 0,
+    totalApplications: 0,
+    totalSpent: 0,
+    paymentsCount: 0
+  });
+  const [activeProjects, setActiveProjects] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [analyticsRes, jobsRes] = await Promise.all([
+          employerAPI.getAnalytics() as Promise<any>,
+          employerAPI.getJobs({ status: 'open' }) as Promise<any>
+        ]);
 
-  const activeProjects = mockJobs.filter((j) => j.status === "open").length;
-  const totalSpent = mockJobs.reduce((sum, j) => sum + j.payAmount, 0);
+        if (analyticsRes.success) {
+          setAnalytics(analyticsRes.analytics);
+        }
+
+        if (jobsRes.success) {
+          setActiveProjects(jobsRes.jobs);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-background">
       <EmployerSidebar />
-      
+
       <main className="flex-1 md:ml-64">
         <div className="container mx-auto p-4 md:p-8">
           {/* Welcome Section */}
@@ -38,24 +73,24 @@ export default function EmployerDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="Active Projects"
-              value={activeProjects}
+              value={analytics.activeJobs}
               icon={Briefcase}
               gradient="gradient-saffron"
             />
             <StatCard
-              title="Total Workers"
-              value="24"
+              title="Total Applications"
+              value={analytics.totalApplications}
               icon={Users}
               gradient="gradient-hero"
             />
             <StatCard
               title="Total Spent"
-              value={`₹${totalSpent.toLocaleString()}`}
+              value={`₹${analytics.totalSpent.toLocaleString()}`}
               icon={IndianRupee}
             />
             <StatCard
-              title="Avg Rating"
-              value="4.8 ⭐"
+              title="Completed Jobs"
+              value={analytics.completedJobs}
               icon={TrendingUp}
               gradient="gradient-success"
             />
@@ -63,32 +98,32 @@ export default function EmployerDashboard() {
 
           {/* Quick Actions */}
           <div className="grid md:grid-cols-4 gap-4 mb-8">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-24 flex-col gap-2"
               onClick={() => navigate("/employer/post-job")}
             >
               <Plus className="h-6 w-6" />
               <span>Post Job</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-24 flex-col gap-2"
               onClick={() => navigate("/employer/workers")}
             >
               <Users className="h-6 w-6" />
               <span>Find Workers</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-24 flex-col gap-2"
               onClick={() => navigate("/employer/projects")}
             >
               <Calendar className="h-6 w-6" />
-              <span>Schedule</span>
+              <span>My Projects</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-24 flex-col gap-2"
               onClick={() => navigate("/employer/messages")}
             >
@@ -100,26 +135,34 @@ export default function EmployerDashboard() {
           {/* Active Projects */}
           <Card>
             <CardHeader>
-              <CardTitle>Active Projects</CardTitle>
+              <CardTitle>Recent Projects</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {mockJobs.slice(0, 4).map((job) => (
-                  <div
-                    key={job.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:border-primary transition-colors"
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{job.title}</h3>
-                      <p className="text-sm text-muted-foreground">{job.location}</p>
+              {loading ? (
+                <div className="text-center py-4">Loading projects...</div>
+              ) : activeProjects.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No active projects found. Post a job to get started!
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeProjects.slice(0, 4).map((job) => (
+                    <div
+                      key={job._id}
+                      className="flex items-center justify-between p-4 rounded-lg border hover:border-primary transition-colors"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{job.title}</h3>
+                        <p className="text-sm text-muted-foreground">{job.location}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">₹{job.budget || job.payAmount}/{job.payType}</p>
+                        <p className="text-sm text-muted-foreground capitalize">{job.status}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">₹{job.payAmount}/{job.payType}</p>
-                      <p className="text-sm text-muted-foreground">{job.status}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
