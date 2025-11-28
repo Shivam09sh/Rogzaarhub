@@ -8,9 +8,10 @@ import { motion } from "framer-motion";
 interface JobCardProps {
   job: Job;
   onApply?: (jobId: string) => void;
+  isApplied?: boolean;
 }
 
-export const JobCard = ({ job, onApply }: JobCardProps) => {
+export const JobCard = ({ job, onApply, isApplied = false }: JobCardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -32,10 +33,10 @@ export const JobCard = ({ job, onApply }: JobCardProps) => {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-3">
           <p className="text-sm line-clamp-2">{job.description}</p>
-          
+
           <div className="flex flex-wrap gap-2">
             {job.requiredSkills.slice(0, 3).map((skill) => (
               <Badge key={skill} variant="secondary" className="text-xs">
@@ -43,25 +44,25 @@ export const JobCard = ({ job, onApply }: JobCardProps) => {
               </Badge>
             ))}
           </div>
-          
+
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               <span>{job.location}</span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <IndianRupee className="h-4 w-4" />
               <span className="font-medium text-foreground">
                 ₹{job.payAmount}/{job.payType}
               </span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span>{job.duration}</span>
             </div>
-            
+
             {job.teamRequired && (
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -70,15 +71,23 @@ export const JobCard = ({ job, onApply }: JobCardProps) => {
             )}
           </div>
         </CardContent>
-        
+
         <CardFooter className="pt-3 flex gap-2">
-          <Button 
+          <Button
             className="flex-1 gradient-saffron text-white"
-            onClick={() => onApply?.(job.id)}
+            onClick={() => onApply?.(job._id)}
+            disabled={isApplied}
           >
-            Apply Solo
+            {isApplied ? (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Applied
+              </>
+            ) : (
+              "Apply Solo"
+            )}
           </Button>
-          {job.teamRequired && (
+          {job.teamRequired && !isApplied && (
             <Button variant="outline" className="flex-1">
               Apply with Team
             </Button>

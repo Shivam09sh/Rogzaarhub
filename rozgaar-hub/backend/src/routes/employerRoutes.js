@@ -11,7 +11,9 @@ import {
     createPayment,
     getAnalytics,
     createCustomJobTitle,
-    getCustomJobTitles
+    getCustomJobTitles,
+    getWorkerById,
+    hireWorker
 } from '../controllers/employerController.js';
 import { protect, requireEmployer } from '../middleware/auth.js';
 
@@ -33,5 +35,7 @@ router.post('/payments', createPayment);
 router.get('/analytics', getAnalytics);
 router.post('/job-titles', createCustomJobTitle);
 router.get('/job-titles', getCustomJobTitles);
+router.get('/worker/:id', getWorkerById);
+router.post('/hire', hireWorker);
 
 export default router;

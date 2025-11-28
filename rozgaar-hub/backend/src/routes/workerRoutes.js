@@ -7,7 +7,9 @@ import {
     getCalendarEvents,
     createCalendarEvent,
     getEarnings,
-    getPayments
+    getPayments,
+    getHireRequests,
+    updateHireRequestStatus
 } from '../controllers/workerController.js';
 import { protect, requireWorker } from '../middleware/auth.js';
 
@@ -25,5 +27,7 @@ router.get('/calendar', getCalendarEvents);
 router.post('/calendar', createCalendarEvent);
 router.get('/earnings', getEarnings);
 router.get('/payments', getPayments);
+router.get('/hire-requests', getHireRequests);
+router.put('/hire-requests/:id', updateHireRequestStatus);
 
 export default router;

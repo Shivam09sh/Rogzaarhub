@@ -36,6 +36,7 @@ export interface EmployerProfile extends User {
 }
 
 export interface Job {
+  _id: string;
   id: string;
   title: string;
   description: string;

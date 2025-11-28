@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { EmployerSidebar } from "@/components/EmployerSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { employerAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function Workers() {
+  const navigate = useNavigate();
   const [workers, setWorkers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,6 +47,10 @@ export default function Workers() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchWorkers(searchQuery);
+  };
+
+  const handleViewProfile = (workerId: string) => {
+    navigate(`/employer/worker/${workerId}`);
   };
 
   return (
@@ -130,7 +136,12 @@ export default function Workers() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1" size="sm">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        size="sm"
+                        onClick={() => handleViewProfile(worker._id)}
+                      >
                         View Profile
                       </Button>
                       <Button className="flex-1 gradient-hero text-white" size="sm">

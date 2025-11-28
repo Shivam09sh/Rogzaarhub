@@ -3,10 +3,9 @@ import Application from '../models/Application.js';
 import Payment from '../models/Payment.js';
 import CalendarEvent from '../models/CalendarEvent.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+import HireRequest from '../models/HireRequest.js';
 
-// @desc    Get worker profile
-// @route   GET /api/worker/profile
-// @access  Private (Worker)
 export const getWorkerProfile = async (req, res) => {
     try {
         const worker = await User.findById(req.user._id);
@@ -108,6 +107,17 @@ export const applyToJob = async (req, res) => {
             workerPhoto: req.user.profilePhoto,
             message: message || '',
             teamMembers: teamMembers || []
+        });
+
+        // Create notification for employer
+        await Notification.create({
+            userId: job.employerId,
+            type: 'application',
+            title: 'New Job Application',
+            message: `${req.user.name} has applied for your job: ${job.title}`,
+            relatedId: application._id,
+            relatedModel: 'Application',
+            actionUrl: `/employer/applications?jobId=${jobId}`
         });
 
         res.status(201).json({
@@ -251,6 +261,118 @@ export const getPayments = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching payments'
+        });
+    }
+};
+
+// @desc    Get hire requests for worker
+// @route   GET /api/worker/hire-requests
+// @access  Private (Worker)
+export const getHireRequests = async (req, res) => {
+    try {
+        const { status } = req.query;
+
+        let query = { workerId: req.user._id };
+
+        if (status) {
+            query.status = status;
+        }
+
+        const hireRequests = await HireRequest.find(query)
+            .sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            count: hireRequests.length,
+            hireRequests
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching hire requests'
+        });
+    }
+};
+
+// @desc    Update hire request status (accept/reject)
+// @route   PUT /api/worker/hire-requests/:id
+// @access  Private (Worker)
+export const updateHireRequestStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['accepted', 'rejected'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status. Must be "accepted" or "rejected"'
+            });
+        }
+
+        const hireRequest = await HireRequest.findOne({
+            _id: id,
+            workerId: req.user._id
+        });
+
+        if (!hireRequest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Hire request not found'
+            });
+        }
+
+        if (hireRequest.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: 'This hire request has already been processed'
+            });
+        }
+
+        hireRequest.status = status;
+        await hireRequest.save();
+
+        if (status === 'accepted') {
+            // Create a calendar event for the accepted work
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() + 1); // Default to tomorrow
+            startDate.setHours(9, 0, 0, 0);
+
+            const endDate = new Date(startDate);
+            endDate.setHours(17, 0, 0, 0); // 8 hour shift
+
+            await CalendarEvent.create({
+                title: `Work: ${hireRequest.jobTitle || 'Hired Work'}`,
+                description: hireRequest.jobDescription || `Work for ${hireRequest.employerName}`,
+                start: startDate,
+                end: endDate,
+                userId: req.user._id,
+                jobId: hireRequest.jobId, // Can be null now
+                location: hireRequest.jobLocation ? `${hireRequest.jobLocation.city}, ${hireRequest.jobLocation.state}` : '',
+                color: '#10B981' // Green for accepted work
+            });
+        }
+
+        // Create notification for employer
+        await Notification.create({
+            userId: hireRequest.employerId,
+            type: 'application',
+            title: status === 'accepted' ? 'Hire Request Accepted' : 'Hire Request Rejected',
+            message: `${req.user.name} has ${status} your hiring request`,
+            relatedId: hireRequest._id,
+            relatedModel: 'HireRequest',
+            actionUrl: `/employer/workers`
+        });
+
+        res.json({
+            success: true,
+            message: `Hire request ${status} successfully`,
+            hireRequest
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error updating hire request',
+            error: error.message
         });
     }
 };

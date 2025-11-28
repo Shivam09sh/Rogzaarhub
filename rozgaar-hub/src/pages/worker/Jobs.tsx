@@ -20,6 +20,7 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [payType, setPayType] = useState<string>("all");
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
 
   const fetchJobs = async () => {
     try {
@@ -41,13 +42,29 @@ export default function Jobs() {
     }
   };
 
+  const fetchMyApplications = async () => {
+    try {
+      const response = await workerAPI.getApplications() as any;
+      if (response.success) {
+        const appliedJobIds = new Set<string>(
+          response.applications.map((app: any) => app.jobId._id || app.jobId)
+        );
+        setAppliedJobs(appliedJobIds);
+      }
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+    }
+  };
+
   useEffect(() => {
     fetchJobs();
+    fetchMyApplications();
   }, [searchQuery]); // Re-fetch when search query changes (debounce ideally)
 
   const handleApply = async (jobId: string) => {
     try {
-      await workerAPI.applyToJob(jobId);
+      await workerAPI.applyToJob(jobId, {});
+      setAppliedJobs(prev => new Set(prev).add(jobId));
       toast.success("Application submitted successfully!");
     } catch (error: any) {
       console.error("Error applying to job:", error);
@@ -116,7 +133,12 @@ export default function Jobs() {
               </div>
             ) : (
               filteredJobs.map((job) => (
-                <JobCard key={job._id} job={job} onApply={handleApply} />
+                <JobCard
+                  key={job._id}
+                  job={job}
+                  onApply={handleApply}
+                  isApplied={appliedJobs.has(job._id)}
+                />
               ))
             )}
           </div>

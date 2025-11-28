@@ -57,7 +57,9 @@ export const workerAPI = {
     getCalendar: () => api.get('/worker/calendar'),
     createCalendarEvent: (data) => api.post('/worker/calendar', data),
     getEarnings: () => api.get('/worker/earnings'),
-    getPayments: () => api.get('/worker/payments')
+    getPayments: () => api.get('/worker/payments'),
+    getHireRequests: (params) => api.get('/worker/hire-requests', { params }),
+    updateHireRequest: (id, data) => api.put(`/worker/hire-requests/${id}`, data)
 };
 
 // Employer API
@@ -68,12 +70,14 @@ export const employerAPI = {
     updateJob: (id, data) => api.put(`/employer/jobs/${id}`, data),
     deleteJob: (id) => api.delete(`/employer/jobs/${id}`),
     searchWorkers: (params) => api.get('/employer/workers', { params }),
+    getWorkerProfile: (workerId) => api.get(`/employer/worker/${workerId}`),
     getApplications: (jobId) => api.get(`/employer/applications/${jobId}`),
     updateApplication: (id, data) => api.put(`/employer/applications/${id}`, data),
     createPayment: (data) => api.post('/employer/payments', data),
     getAnalytics: () => api.get('/employer/analytics'),
     createJobTitle: (title) => api.post('/employer/job-titles', { title }),
-    getJobTitles: () => api.get('/employer/job-titles')
+    getJobTitles: () => api.get('/employer/job-titles'),
+    hireWorker: (data) => api.post('/employer/hire', data)
 };
 
 // Common API
@@ -82,7 +86,13 @@ export const commonAPI = {
     getUser: (id) => api.get(`/user/${id}`),
     submitReview: (data) => api.post('/reviews', data),
     getUserReviews: (userId) => api.get(`/reviews/${userId}`),
-    deleteCalendarEvent: (id) => api.delete(`/calendar/${id}`)
+    deleteCalendarEvent: (id) => api.delete(`/calendar/${id}`),
+    // Notification methods
+    getNotifications: (params) => api.get('/notifications', { params }),
+    markNotificationRead: (id) => api.put(`/notifications/${id}/read`),
+    markAllNotificationsRead: () => api.put('/notifications/read-all'),
+    deleteNotification: (id) => api.delete(`/notifications/${id}`),
+    deleteReadNotifications: () => api.delete('/notifications/read')
 };
 
 export default api;

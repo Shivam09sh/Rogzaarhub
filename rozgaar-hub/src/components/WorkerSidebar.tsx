@@ -9,7 +9,8 @@ import {
   User,
   HelpCircle,
   Menu,
-  X
+  X,
+  FileText
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ const navigation = [
   { name: "Dashboard", href: "/worker/dashboard", icon: LayoutDashboard },
   { name: "Calendar", href: "/worker/calendar", icon: Calendar },
   { name: "Jobs", href: "/worker/jobs", icon: Briefcase },
+  { name: "Work Requests", href: "/worker/work-requests", icon: FileText },
   { name: "My Applications", href: "/worker/applications", icon: Briefcase },
   { name: "Team", href: "/worker/team", icon: Users },
   { name: "Messages", href: "/worker/messages", icon: MessageSquare },

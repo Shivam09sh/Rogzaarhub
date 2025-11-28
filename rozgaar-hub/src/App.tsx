@@ -13,6 +13,7 @@ import WorkerOnboarding from "./pages/onboarding/WorkerOnboarding";
 import EmployerOnboarding from "./pages/onboarding/EmployerOnboarding";
 import WorkerDashboard from "./pages/worker/Dashboard";
 import WorkerJobs from "./pages/worker/Jobs";
+import WorkerWorkRequests from "./pages/worker/WorkRequests";
 import WorkerMyApplications from "./pages/worker/MyApplications";
 import WorkerCalendar from "./pages/worker/Calendar";
 import WorkerTeam from "./pages/worker/Team";
@@ -26,6 +27,7 @@ import EmployerProjects from "./pages/employer/Projects";
 import EmployerViewProject from "./pages/employer/ViewProject";
 import EmployerEditProject from "./pages/employer/EditProject";
 import EmployerWorkers from "./pages/employer/Workers";
+import EmployerWorkerProfile from "./pages/employer/WorkerProfile";
 import EmployerPayments from "./pages/employer/Payments";
 import EmployerMessages from "./pages/employer/Messages";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -67,6 +69,11 @@ const App = () => (
             <Route path="/worker/jobs" element={
               <ProtectedRoute requiredRole="worker">
                 <WorkerJobs />
+              </ProtectedRoute>
+            } />
+            <Route path="/worker/work-requests" element={
+              <ProtectedRoute requiredRole="worker">
+                <WorkerWorkRequests />
               </ProtectedRoute>
             } />
             <Route path="/worker/applications" element={
@@ -134,6 +141,11 @@ const App = () => (
             <Route path="/employer/workers" element={
               <ProtectedRoute requiredRole="employer">
                 <EmployerWorkers />
+              </ProtectedRoute>
+            } />
+            <Route path="/employer/worker/:id" element={
+              <ProtectedRoute requiredRole="employer">
+                <EmployerWorkerProfile />
               </ProtectedRoute>
             } />
             <Route path="/employer/payments" element={

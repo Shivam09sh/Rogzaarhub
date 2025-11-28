@@ -3,6 +3,8 @@ import Application from '../models/Application.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import CustomJobTitle from '../models/CustomJobTitle.js';
+import HireRequest from '../models/HireRequest.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Get employer profile
 // @route   GET /api/employer/profile
@@ -446,4 +448,144 @@ export const getCustomJobTitles = async (req, res) => {
         });
     }
 };
+
+// @desc    Get worker profile by ID
+// @route   GET /api/employer/worker/:id
+// @access  Private (Employer)
+export const getWorkerById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const worker = await User.findOne({
+            _id: id,
+            role: 'worker'
+        }).select('-password');
+
+        if (!worker) {
+            return res.status(404).json({
+                success: false,
+                message: 'Worker not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            worker
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching worker profile',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Hire a worker (create hiring request)
+// @route   POST /api/employer/hire
+// @access  Private (Employer)
+export const hireWorker = async (req, res) => {
+    try {
+        const {
+            workerId,
+            jobId,
+            jobTitle,
+            jobDescription,
+            jobLocation,
+            salaryType,
+            salaryAmount,
+            message
+        } = req.body;
+
+        if (!workerId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Worker ID is required'
+            });
+        }
+
+        // Check if worker exists
+        const worker = await User.findOne({
+            _id: workerId,
+            role: 'worker'
+        });
+
+        if (!worker) {
+            return res.status(404).json({
+                success: false,
+                message: 'Worker not found'
+            });
+        }
+
+        // Check if job exists (if jobId provided)
+        let job = null;
+        if (jobId) {
+            job = await Job.findOne({
+                _id: jobId,
+                employerId: req.user._id
+            });
+
+            if (!job) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Job not found or unauthorized'
+                });
+            }
+        }
+
+        // Check if hiring request already exists
+        const existingRequest = await HireRequest.findOne({
+            employerId: req.user._id,
+            workerId,
+            status: { $in: ['pending', 'accepted'] }
+        });
+
+        if (existingRequest) {
+            return res.status(400).json({
+                success: false,
+                message: 'You already have a pending or active hiring request for this worker'
+            });
+        }
+
+        // Create hiring request
+        const hireRequest = await HireRequest.create({
+            employerId: req.user._id,
+            employerName: req.user.companyName || req.user.name,
+            employerPhoto: req.user.profilePhoto || '',
+            employerPhoneNumber: req.user.phone || '',
+            workerId,
+            jobId: jobId || null,
+            jobTitle: jobTitle || '',
+            jobDescription: jobDescription || '',
+            jobLocation: jobLocation || { state: '', city: '' },
+            salaryType: salaryType || '',
+            salaryAmount: salaryAmount || 0,
+            message: message || ''
+        });
+
+        // Create notification for worker
+        await Notification.create({
+            userId: workerId,
+            type: 'application',
+            title: 'New Hiring Request',
+            message: `${req.user.companyName || req.user.name} wants to hire you${jobId ? ' for a job' : ''}`,
+            relatedId: hireRequest._id,
+            relatedModel: 'HireRequest',
+            actionUrl: `/worker/hire-requests`
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Hiring request sent successfully',
+            hireRequest
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error creating hiring request',
+            error: error.message
+        });
+    }
+};
+
 

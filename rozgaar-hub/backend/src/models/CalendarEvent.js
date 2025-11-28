@@ -16,7 +16,7 @@ const calendarEventSchema = new mongoose.Schema({
     jobId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Job',
-        required: true
+        required: false
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
