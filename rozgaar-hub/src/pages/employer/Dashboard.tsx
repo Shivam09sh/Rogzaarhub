@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { employerAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { BlockchainWidget } from "@/components/BlockchainWidget";
 
 export default function EmployerDashboard() {
   const navigate = useNavigate();
@@ -96,75 +97,87 @@ export default function EmployerDashboard() {
             />
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid md:grid-cols-4 gap-4 mb-8">
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => navigate("/employer/post-job")}
-            >
-              <Plus className="h-6 w-6" />
-              <span>Post Job</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => navigate("/employer/workers")}
-            >
-              <Users className="h-6 w-6" />
-              <span>Find Workers</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => navigate("/employer/projects")}
-            >
-              <Calendar className="h-6 w-6" />
-              <span>My Projects</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => navigate("/employer/messages")}
-            >
-              <MessageSquare className="h-6 w-6" />
-              <span>Messages</span>
-            </Button>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content Column */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Quick Actions */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => navigate("/employer/post-job")}
+                >
+                  <Plus className="h-6 w-6" />
+                  <span>Post Job</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => navigate("/employer/workers")}
+                >
+                  <Users className="h-6 w-6" />
+                  <span>Find Workers</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => navigate("/employer/projects")}
+                >
+                  <Calendar className="h-6 w-6" />
+                  <span>My Projects</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => navigate("/employer/messages")}
+                >
+                  <MessageSquare className="h-6 w-6" />
+                  <span>Messages</span>
+                </Button>
+              </div>
 
-          {/* Active Projects */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-4">Loading projects...</div>
-              ) : activeProjects.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No active projects found. Post a job to get started!
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {activeProjects.slice(0, 4).map((job) => (
-                    <div
-                      key={job._id}
-                      className="flex items-center justify-between p-4 rounded-lg border hover:border-primary transition-colors"
-                    >
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{job.title}</h3>
-                        <p className="text-sm text-muted-foreground">{job.location}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">₹{job.budget || job.payAmount}/{job.payType}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{job.status}</p>
-                      </div>
+              {/* Active Projects */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Projects</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="text-center py-4">Loading projects...</div>
+                  ) : activeProjects.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No active projects found. Post a job to get started!
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {activeProjects.slice(0, 4).map((job) => (
+                        <div
+                          key={job._id}
+                          className="flex items-center justify-between p-4 rounded-lg border hover:border-primary transition-colors"
+                        >
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{job.title}</h3>
+                            <p className="text-sm text-muted-foreground">{job.location}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">₹{job.budget || job.payAmount}/{job.payType}</p>
+                            <p className="text-sm text-muted-foreground capitalize">{job.status}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Sidebar Column */}
+            <div className="space-y-6">
+              <BlockchainWidget />
+
+              {/* You could add other widgets here like "Recent Activity" or "Notifications" */}
+            </div>
+          </div>
         </div>
       </main>
     </div>

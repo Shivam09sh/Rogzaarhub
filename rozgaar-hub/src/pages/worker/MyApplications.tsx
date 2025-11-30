@@ -7,10 +7,15 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, IndianRupee, Building } from "lucide-react";
 import { workerAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { blockchainService, EscrowStatus } from "@/lib/blockchain";
+import { ShieldCheck, CheckCircle, Loader2 } from "lucide-react";
 
 export default function MyApplications() {
     const [applications, setApplications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [escrows, setEscrows] = useState<Record<string, any>>({});
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -19,6 +24,14 @@ export default function MyApplications() {
                 const response = await workerAPI.getApplications() as any;
                 if (response.success) {
                     setApplications(response.applications);
+
+                    // Fetch escrow details for accepted applications
+                    const acceptedApps = response.applications.filter((app: any) => app.status === 'accepted');
+                    acceptedApps.forEach((app: any) => {
+                        if (app.jobId?._id) {
+                            fetchEscrow(app.jobId._id);
+                        }
+                    });
                 }
             } catch (error) {
                 console.error("Error fetching applications:", error);
@@ -30,6 +43,29 @@ export default function MyApplications() {
 
         fetchApplications();
     }, []);
+
+    const fetchEscrow = async (jobId: string) => {
+        try {
+            const details = await blockchainService.getEscrowDetails(jobId);
+            if (details) {
+                setEscrows(prev => ({ ...prev, [jobId]: details }));
+            }
+        } catch (error) {
+            console.error(`Error fetching escrow for job ${jobId}:`, error);
+        }
+    };
+
+    const handleConfirmCompletion = async (jobId: string, escrowId: number) => {
+        try {
+            setActionLoading(jobId);
+            const success = await blockchainService.confirmCompletion(escrowId);
+            if (success) {
+                fetchEscrow(jobId);
+            }
+        } finally {
+            setActionLoading(null);
+        }
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -95,13 +131,57 @@ export default function MyApplications() {
                                         </div>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <div className="flex items-center gap-1 font-medium">
-                                                <IndianRupee className="h-4 w-4" />
-                                                {app.jobId?.payAmount}/{app.jobId?.payType}
+                                        <div className="flex flex-col gap-3 mt-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1 font-medium">
+                                                    <IndianRupee className="h-4 w-4" />
+                                                    {app.jobId?.payAmount}/{app.jobId?.payType}
+                                                </div>
+                                                {app.status === 'accepted' && (
+                                                    <Button size="sm" variant="outline">View Details</Button>
+                                                )}
                                             </div>
-                                            {app.status === 'accepted' && (
-                                                <Button size="sm" variant="outline">View Details</Button>
+
+                                            {/* Escrow Status for Accepted Jobs */}
+                                            {app.status === 'accepted' && escrows[app.jobId?._id] && (
+                                                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                                                            <ShieldCheck className="h-4 w-4" />
+                                                            Blockchain Escrow
+                                                        </div>
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {EscrowStatus[escrows[app.jobId._id].status]}
+                                                        </Badge>
+                                                    </div>
+
+                                                    {escrows[app.jobId._id].status === EscrowStatus.Funded && !escrows[app.jobId._id].workerConfirmed && (
+                                                        <Button
+                                                            size="sm"
+                                                            className="w-full gradient-success text-white mt-2"
+                                                            onClick={() => handleConfirmCompletion(app.jobId._id, escrows[app.jobId._id].escrowId)}
+                                                            disabled={actionLoading === app.jobId._id}
+                                                        >
+                                                            {actionLoading === app.jobId._id ? (
+                                                                <>
+                                                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                                                    Confirming...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <CheckCircle className="mr-2 h-3 w-3" />
+                                                                    Confirm Work Completion
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    )}
+
+                                                    {escrows[app.jobId._id].workerConfirmed && escrows[app.jobId._id].status !== EscrowStatus.Released && (
+                                                        <div className="text-xs text-center text-muted-foreground mt-1">
+                                                            Waiting for employer approval
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </CardContent>

@@ -50,7 +50,7 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Briefcase className="h-8 w-8 text-primary" />
+            <img src="/rozgaar-logo.jpg" alt="RozgaarHub Logo" className="h-10 w-auto" />
             <span className="text-2xl font-bold">
               <span className="text-primary">रोज़गार</span>
               <span className="text-secondary">Hub</span>

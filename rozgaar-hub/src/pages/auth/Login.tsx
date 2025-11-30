@@ -44,7 +44,7 @@ export default function Login() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="flex items-center gap-2">
-              <Briefcase className="h-8 w-8 text-primary" />
+              <img src="/rozgaar-logo.jpg" alt="RozgaarHub Logo" className="h-10 w-auto" />
               <span className="text-2xl font-bold">
                 <span className="text-primary">Rozgaar</span>
                 <span className="text-secondary">Hub</span>

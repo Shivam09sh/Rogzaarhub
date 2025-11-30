@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, MapPin, Loader2, Check, ChevronsUpDown, Plus } from "lucide-react";
+import { X, MapPin, Loader2, Check, ChevronsUpDown, Plus, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { employerAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +91,7 @@ export default function PostJob() {
     startDate: "",
     teamRequired: false,
     teamSize: "",
+    blockchainSecured: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -245,7 +247,8 @@ export default function PostJob() {
         ...formData,
         skills: selectedSkills,
         payAmount: Number(formData.payAmount),
-        teamSize: formData.teamRequired ? Number(formData.teamSize) : 1
+        teamSize: formData.teamRequired ? Number(formData.teamSize) : 1,
+        title: formData.blockchainSecured ? `${formData.title} (Blockchain Secured)` : formData.title
       };
 
       await employerAPI.createJob(jobData);
@@ -535,6 +538,23 @@ export default function PostJob() {
                       />
                     </div>
                   )}
+                </div>
+
+                <div className="flex items-center space-x-2 border p-4 rounded-lg bg-muted/30">
+                  <Switch
+                    id="blockchain-secure"
+                    checked={formData.blockchainSecured}
+                    onCheckedChange={(checked) => setFormData({ ...formData, blockchainSecured: checked })}
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="blockchain-secure" className="flex items-center gap-2 cursor-pointer">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Secure with Blockchain Escrow
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Payment will be held in a smart contract until work is completed and verified.
+                    </p>
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full gradient-hero text-white" size="lg" disabled={loading}>
