@@ -15,7 +15,10 @@ import { useNavigate } from "react-router-dom";
 import { X, MapPin, Loader2, Check, ChevronsUpDown, Plus, ShieldCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { employerAPI } from "@/lib/api";
+import { getPreciseLocation, constructDetailedAddress, LocationResult } from "@/lib/geolocationUtils";
+import { reverseGeocodeGoogle } from "@/lib/googleMaps";
 import { cn } from "@/lib/utils";
+import StateCitySelector from "@/components/StateCitySelector";
 
 const skillOptions = ["Construction", "Plumbing", "Electrical", "Painting", "Carpentry", "Cleaning"];
 
@@ -37,38 +40,6 @@ const predefinedJobRoles = [
   "Beautician"
 ];
 
-const indianLocations: { [key: string]: string[] } = {
-  "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool"],
-  "Arunachal Pradesh": ["Itanagar", "Naharlagun", "Pasighat", "Tawang"],
-  "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon"],
-  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Darbhanga"],
-  "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba", "Durg"],
-  "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda"],
-  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar"],
-  "Haryana": ["Gurugram", "Faridabad", "Panipat", "Ambala", "Karnal"],
-  "Himachal Pradesh": ["Shimla", "Dharamshala", "Solan", "Mandi", "Kullu"],
-  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Deoghar"],
-  "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore", "Belgaum"],
-  "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam"],
-  "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain"],
-  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Aurangabad"],
-  "Manipur": ["Imphal", "Thoubal", "Bishnupur", "Churachandpur"],
-  "Meghalaya": ["Shillong", "Tura", "Jowai", "Nongstoin"],
-  "Mizoram": ["Aizawl", "Lunglei", "Champhai", "Serchhip"],
-  "Nagaland": ["Kohima", "Dimapur", "Mokokchung", "Tuensang"],
-  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Puri", "Berhampur"],
-  "Punjab": ["Chandigarh", "Ludhiana", "Amritsar", "Jalandhar", "Patiala"],
-  "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Ajmer"],
-  "Sikkim": ["Gangtok", "Namchi", "Gyalshing", "Mangan"],
-  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli"],
-  "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam"],
-  "Tripura": ["Agartala", "Udaipur", "Dharmanagar", "Kailasahar"],
-  "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida"],
-  "Uttarakhand": ["Dehradun", "Haridwar", "Roorkee", "Haldwani", "Rishikesh"],
-  "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri"],
-  "Delhi": ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi"]
-};
-
 export default function PostJob() {
   const navigate = useNavigate();
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -85,6 +56,7 @@ export default function PostJob() {
     title: "",
     description: "",
     location: "",
+    address: "",
     payAmount: "",
     payType: "daily" as "hourly" | "daily" | "fixed",
     duration: "",
@@ -128,6 +100,8 @@ export default function PostJob() {
       setFormData(prev => ({ ...prev, location: `${city}, ${state}` }));
     } else if (state) {
       setFormData(prev => ({ ...prev, location: state }));
+    } else {
+      setFormData(prev => ({ ...prev, location: "" }));
     }
   };
 
@@ -156,76 +130,87 @@ export default function PostJob() {
     }
   };
 
-  const handleLiveLocation = async () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
+  const [showManualInput, setShowManualInput] = useState(false);
+
+  const handleManualLocation = async () => {
+    if (!manualLat || !manualLng) {
+      toast.error("Please enter both latitude and longitude");
+      return;
+    }
+
+    const lat = parseFloat(manualLat);
+    const lng = parseFloat(manualLng);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      toast.error("Invalid coordinates");
       return;
     }
 
     setDetectingLocation(true);
+    try {
+      const addressData = await reverseGeocodeGoogle(lat, lng);
+
+      // Adapt to LocationResult interface for consistency
+      const locationResult: LocationResult = {
+        ...addressData,
+        latitude: lat,
+        longitude: lng,
+        source: 'gps-high-accuracy', // Treat as high accuracy for manual entry
+        formattedAddress: addressData.formattedAddress
+      };
+
+      if (locationResult.state) {
+        handleLocationChange(locationResult.state, locationResult.city || "");
+
+        const detailedAddress = constructDetailedAddress(locationResult);
+        if (detailedAddress) {
+          setFormData(prev => ({ ...prev, address: detailedAddress }));
+        }
+
+        toast.success(`Location found: ${locationResult.city}, ${locationResult.state}`);
+      } else {
+        toast.error("Could not determine location details from these coordinates");
+      }
+    } catch (error: any) {
+      console.error("Manual location error:", error);
+      toast.error("Failed to fetch address. Check coordinates.");
+    } finally {
+      setDetectingLocation(false);
+    }
+  };
+
+  const handleLiveLocation = async () => {
+    setDetectingLocation(true);
     toast.info("Detecting your location...");
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
+    try {
+      const location = await getPreciseLocation();
 
-        try {
-          // Use Nominatim reverse geocoding
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
-          );
-          const data = await response.json();
+      if (location.state) {
+        handleLocationChange(location.state, location.city || "");
 
-          if (data && data.address) {
-            const state = data.address.state || "";
-            const city = data.address.city || data.address.town || data.address.village || "";
-
-            if (state && city) {
-              // Try to match with our predefined states
-              const matchedState = Object.keys(indianLocations).find(
-                s => s.toLowerCase() === state.toLowerCase()
-              );
-
-              if (matchedState) {
-                setSelectedState(matchedState);
-
-                // Try to match city
-                const matchedCity = indianLocations[matchedState].find(
-                  c => c.toLowerCase() === city.toLowerCase()
-                );
-
-                if (matchedCity) {
-                  setSelectedCity(matchedCity);
-                  handleLocationChange(matchedState, matchedCity);
-                  toast.success(`Location detected: ${matchedCity}, ${matchedState}`);
-                } else {
-                  // City not in our list, just set the state
-                  handleLocationChange(matchedState, "");
-                  toast.warning(`State detected: ${matchedState}. Please select city manually.`);
-                }
-              } else {
-                toast.warning("Could not match location. Please select manually.");
-              }
-            } else {
-              toast.error("Could not determine location details");
-            }
-          }
-        } catch (error) {
-          console.error("Error reverse geocoding:", error);
-          toast.error("Failed to detect location. Please select manually.");
-        } finally {
-          setDetectingLocation(false);
+        const detailedAddress = constructDetailedAddress(location);
+        if (detailedAddress) {
+          setFormData(prev => ({ ...prev, address: detailedAddress }));
         }
-      },
-      (error) => {
-        setDetectingLocation(false);
-        if (error.code === error.PERMISSION_DENIED) {
-          toast.error("Location permission denied. Please enable location access.");
+
+        if (location.source === 'ip-fallback') {
+          toast.warning(`GPS unavailable (${location.error}). Using approximate location.`);
+          toast.info("Please manually enter street details for better accuracy.");
         } else {
-          toast.error("Failed to get your location");
+          toast.success(`Location detected: ${location.city}, ${location.state}`);
         }
+      } else {
+        toast.error("Could not determine location details");
       }
-    );
+    } catch (error: any) {
+      console.error("Location detection error:", error);
+      toast.error(error.message || "Failed to detect location. Please select manually.");
+    } finally {
+      setDetectingLocation(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -241,11 +226,16 @@ export default function PostJob() {
       return;
     }
 
+    if (!formData.location) {
+      toast.error("Please select a location");
+      return;
+    }
+
     try {
       setLoading(true);
       const jobData = {
         ...formData,
-        skills: selectedSkills,
+        requiredSkills: selectedSkills,
         payAmount: Number(formData.payAmount),
         teamSize: formData.teamRequired ? Number(formData.teamSize) : 1,
         title: formData.blockchainSecured ? `${formData.title} (Blockchain Secured)` : formData.title
@@ -347,16 +337,17 @@ export default function PostJob() {
                   />
                 </div>
 
-                {/* Location with Live Detection */}
+                {/* Location with StateCitySelector */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Location</Label>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={handleLiveLocation}
                       disabled={detectingLocation}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     >
                       {detectingLocation ? (
                         <>
@@ -371,46 +362,73 @@ export default function PostJob() {
                       )}
                     </Button>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="state" className="text-xs text-muted-foreground">State</Label>
-                      <Select
-                        value={selectedState}
-                        onValueChange={(value) => handleLocationChange(value, "")}
-                      >
-                        <SelectTrigger id="state">
-                          <SelectValue placeholder="Select State" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.keys(indianLocations).map((state) => (
-                            <SelectItem key={state} value={state}>
-                              {state}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="city" className="text-xs text-muted-foreground">City</Label>
-                      <Select
-                        value={selectedCity}
-                        onValueChange={(value) => handleLocationChange(selectedState, value)}
-                        disabled={!selectedState}
-                      >
-                        <SelectTrigger id="city">
-                          <SelectValue placeholder="Select City" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedState && indianLocations[selectedState]?.map((city) => (
-                            <SelectItem key={city} value={city}>
-                              {city}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="flex justify-end -mt-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualInput(!showManualInput)}
+                      className="text-xs text-blue-600 hover:underline flex items-center"
+                    >
+                      {showManualInput ? "Hide Manual Input" : "Search Location"}
+                    </button>
                   </div>
+
+                  {showManualInput && (
+                    <div className="grid grid-cols-2 gap-2 mb-4 p-3 border rounded-md bg-gray-50">
+                      <div className="col-span-2 text-xs text-gray-500 mb-1">
+                        Enter coordinates manually if GPS fails.
+                      </div>
+                      <div>
+                        <Label htmlFor="lat" className="text-xs">Latitude</Label>
+                        <Input
+                          id="lat"
+                          placeholder="e.g. 12.9716"
+                          value={manualLat}
+                          onChange={(e) => setManualLat(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lng" className="text-xs">Longitude</Label>
+                        <Input
+                          id="lng"
+                          placeholder="e.g. 77.5946"
+                          value={manualLng}
+                          onChange={(e) => setManualLng(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handleManualLocation}
+                        disabled={detectingLocation}
+                        variant="outline"
+                        size="sm"
+                        className="col-span-2 mt-1 h-8"
+                      >
+                        {detectingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : "Fetch Address"}
+                      </Button>
+                    </div>
+                  )}
+
+                  <StateCitySelector
+                    onStateChange={(state) => handleLocationChange(state, selectedCity)}
+                    onCityChange={(city) => handleLocationChange(selectedState, city)}
+                    defaultState={selectedState}
+                    defaultCity={selectedCity}
+                    showAutocomplete={true}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Detailed Address</Label>
+                  <Textarea
+                    id="address"
+                    placeholder="Full address (will be auto-filled with live location)"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    rows={2}
+                  />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">

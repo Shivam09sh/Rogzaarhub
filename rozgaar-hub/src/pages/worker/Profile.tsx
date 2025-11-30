@@ -236,7 +236,7 @@ export default function Profile() {
                 <Input
                   id="location"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="City, State"
                 />
               </div>

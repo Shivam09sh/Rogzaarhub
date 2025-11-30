@@ -50,6 +50,7 @@ export const createJob = async (req, res) => {
             job
         });
     } catch (error) {
+        console.error('Error creating job:', error);
         res.status(500).json({
             success: false,
             message: 'Error creating job',
