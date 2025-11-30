@@ -75,6 +75,15 @@ const jobSchema = new mongoose.Schema({
     verified: {
         type: Boolean,
         default: false
+    },
+    // Blockchain integration
+    escrowId: {
+        type: Number,
+        default: null
+    },
+    useBlockchain: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

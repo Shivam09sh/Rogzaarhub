@@ -45,6 +45,24 @@ const paymentSchema = new mongoose.Schema({
     notes: {
         type: String,
         default: ''
+    },
+    // Blockchain fields
+    escrowId: {
+        type: Number,
+        default: null
+    },
+    blockchainTxHash: {
+        type: String,
+        default: ''
+    },
+    blockchainStatus: {
+        type: String,
+        enum: ['none', 'created', 'funded', 'completed', 'released', 'disputed', 'refunded'],
+        default: 'none'
+    },
+    useBlockchain: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

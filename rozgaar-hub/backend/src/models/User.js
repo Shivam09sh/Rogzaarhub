@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters'],
+        minlength: [8, 'Password must be at least 8 characters'],
         select: false // Don't include password in queries by default
     },
     phone: {
@@ -39,6 +39,18 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['en', 'hi'],
         default: 'en'
+    },
+    // Blockchain fields
+    walletAddress: {
+        type: String,
+        default: '',
+        lowercase: true,
+        sparse: true,
+        index: true
+    },
+    blockchainUserId: {
+        type: String,
+        default: ''
     },
     // Worker-specific fields
     skills: [{

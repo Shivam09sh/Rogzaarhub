@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import CustomJobTitle from '../models/CustomJobTitle.js';
 import HireRequest from '../models/HireRequest.js';
 import Notification from '../models/Notification.js';
+import CalendarEvent from '../models/CalendarEvent.js';
 
 // @desc    Get employer profile
 // @route   GET /api/employer/profile
